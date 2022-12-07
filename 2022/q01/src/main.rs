@@ -17,5 +17,3 @@ fn main() {
     println!("Part 1: {}", top_three[2]);
     println!("Part 2: {}", top_three.iter().sum::<i32>());
 }
-
-// Answer: 71023
