@@ -1,10 +1,13 @@
-use std::rc::Rc;
+use std::{
+    cell::RefCell,
+    rc::{Rc, Weak},
+};
 
-struct Node<'a> {
+struct Node {
     name: String,
     file_type: FileType,
-    children: Vec<Box<Node<'a>>>,
-    parent: Option<Rc<&'a mut Node<'a>>>,
+    children: RefCell<Vec<Rc<Node>>>,
+    parent: RefCell<Weak<Node>>,
 }
 
 enum FileType {
@@ -14,9 +17,9 @@ enum FileType {
 
 fn main() {
     let contents = include_str!("../input.txt").lines().collect::<Vec<&str>>();
-    let mut root = new_node("/", FileType::Directory, None);
+    let mut root = Rc::new(new_node("/", FileType::Directory, None));
 
-    let curr_dir = &mut root;
+    let curr_dir = Rc::clone(&root);
 
     for line in contents.iter().skip(1) {
         let parts = line.split(' ').collect::<Vec<&str>>();
@@ -31,32 +34,37 @@ fn main() {
 
                 // Check if the directory already exists
                 let mut found = false;
-                for child in curr_dir.children.iter() {
+                for child in curr_dir.children.borrow().iter() {
                     if child.name == *name {
                         found = true;
                     }
                 }
 
                 if !found {
-                    let new_node =
-                        Box::new(new_node(name, FileType::Directory, Some(Rc::new(curr_dir))));
-                    curr_dir.children.push(new_node);
+                    let new_node = Rc::new(new_node(
+                        name,
+                        FileType::Directory,
+                        Some(Rc::downgrade(&curr_dir)),
+                    ));
+                    curr_dir.children.borrow_mut().push(new_node);
                 }
             } // Some(file_size) => {
-              //     let
-              // }
+            //     let
+            // }
+            Some(_) => {}
+            None => {}
         }
     }
 }
 
-fn new_node<'a>(name: &str, file_type: FileType, parent: Option<Rc<&mut Node>>) -> Node<'a> {
+fn new_node(name: &str, file_type: FileType, parent: Option<Weak<Node>>) -> Node {
     Node {
         name: String::from(name),
         file_type,
-        children: vec![],
+        children: RefCell::new(vec![]),
         parent: match parent {
-            Some(parent) => Some(parent),
-            None => None,
+            Some(parent) => RefCell::new(parent),
+            None => RefCell::new(Weak::new()),
         },
     }
 }
