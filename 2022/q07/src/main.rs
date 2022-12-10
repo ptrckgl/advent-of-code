@@ -17,7 +17,9 @@ enum FileType {
     File(u64), // Represents the size of the file
 }
 
-const DISK_SPACE: u64 = 100000;
+const DIR_MAX: u64 = 100000;
+const DISK_SPACE: u64 = 70000000;
+const MIN_DISK_SPACE: u64 = 30000000;
 
 fn main() {
     let contents = include_str!("../input.txt").lines().collect::<Vec<&str>>();
@@ -105,9 +107,17 @@ fn main() {
     print_nodes(&root, 0);
 
     let mut total: u64 = 0;
-    println!("\nDirectories under {DISK_SPACE}:");
-    find_directory_sizes(&root, DISK_SPACE, &mut total);
+    println!("\nDirectories under {DIR_MAX}:");
+    let mut min_remove = find_directory_sizes(&root, DIR_MAX, &mut total);
     println!("The total size of these directories is: {total}");
+
+    println!("\nThe root size is: {min_remove}");
+    find_ceiling(
+        &root,
+        MIN_DISK_SPACE - (DISK_SPACE - min_remove),
+        &mut min_remove,
+    );
+    println!("Smallest directory to remove to have {MIN_DISK_SPACE} space is:\n- {min_remove}")
 }
 
 fn new_node(name: &str, file_type: FileType, parent: Option<Weak<Node>>) -> Node {
@@ -157,6 +167,24 @@ fn find_directory_sizes(node: &Node, max_size: u64, total: &mut u64) -> u64 {
             if dir_size <= max_size {
                 println!("- {} (size={})", node.name, dir_size);
                 *total += dir_size;
+            }
+
+            dir_size
+        }
+        FileType::File(size) => size,
+    }
+}
+
+fn find_ceiling(node: &Node, min_size: u64, ceiling: &mut u64) -> u64 {
+    match node.file_type {
+        FileType::Directory => {
+            let mut dir_size = 0;
+            for child in node.children.borrow().iter() {
+                dir_size += find_ceiling(child, min_size, ceiling);
+            }
+
+            if dir_size >= min_size && dir_size <= *ceiling {
+                *ceiling = dir_size;
             }
 
             dir_size
