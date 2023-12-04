@@ -1,0 +1,11 @@
+{
+  "devDependencies": {
+    "@types/node": "^20.10.3",
+    "typescript": "^5.3.2"
+  },
+  "main": "index.js",
+  "scripts": {
+    "l": "ts-node index.ts input_large.txt",
+    "s": "ts-node index.ts input_small.txt"
+  }
+}
