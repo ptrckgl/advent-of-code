@@ -3,7 +3,7 @@ use std::{
     ops::{AddAssign, SubAssign},
 };
 
-#[derive(PartialEq, Eq, Hash, Clone)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 struct Position {
     x: i32,
     y: i32,
@@ -36,17 +36,41 @@ impl Position {
     /// This function should only be called with a 'head' Position
     fn move_head(&mut self, tail: &mut Position, dir: &Direction) {
         *self += *dir;
+        Position::move_tail(self, tail, dir);
+    }
 
+    fn move_tail(head: &mut Position, tail: &mut Position, dir: &Direction) {
         // Deal with the possibilities of moving the tail
-        if Position::distance_between(self, tail) > 1 {
+        if Position::distance_between(head, tail) > 1 {
             // They are still on the same row/col
-            if tail.x == self.x || tail.y == self.y {
+            if tail.x == head.x || tail.y == head.y {
                 *tail += *dir;
             }
             // A diagonal movement has been made
             else {
-                *tail = self.clone();
+                *tail = head.clone();
                 *tail -= *dir;
+            }
+        }
+    }
+
+    fn move_head_2(&mut self, tails: &mut [Position; 9], dir: &Direction) {
+        *self += *dir;
+
+        Position::move_tail(self, &mut tails[0], dir);
+
+        for i in 0..8 {
+            Position::move_tail_2(i, tails, dir);
+        }
+    }
+
+    fn move_tail_2(idx: usize, tails: &mut [Position; 9], dir: &Direction) {
+        if Position::distance_between(&tails[idx], &tails[idx + 1]) > 1 {
+            if tails[idx + 1].x == tails[idx].x || tails[idx + 1].y == tails[idx].y {
+                tails[idx + 1] += *dir;
+            } else {
+                tails[idx + 1] = tails[idx].clone();
+                tails[idx + 1] -= *dir;
             }
         }
     }
@@ -91,6 +115,9 @@ fn main() {
     let mut head = Position::new(0, 0);
     let mut tail = Position::new(0, 0);
     let mut tail_visited: HashSet<Position> = HashSet::new();
+    let mut head_2 = Position::new(0, 0);
+    let mut tails = [Position::new(0, 0); 9];
+    let mut tail_visited_2: HashSet<Position> = HashSet::new();
 
     for instruction in contents.iter() {
         let mut instr = instruction.split(' ');
@@ -102,8 +129,11 @@ fn main() {
         for _ in 0..len {
             head.move_head(&mut tail, &dir);
             tail_visited.insert(tail.clone());
+            head_2.move_head_2(&mut tails, &dir);
+            tail_visited_2.insert(tails[8].clone());
         }
     }
 
     println!("Part 1: {}", tail_visited.len());
+    println!("Part 2: {}", tail_visited_2.len());
 }
