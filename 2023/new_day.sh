@@ -7,7 +7,7 @@ then
 fi
 
 mkdir $FOLDER_NAME
-cp -R ./DayTemplate ./$FOLDER_NAME
+cp -R ./DayTemplate/* ./$FOLDER_NAME
 git add .
 git commit -m "Init $FOLDER_NAME"
 cd $FOLDER_NAME
